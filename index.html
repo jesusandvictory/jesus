@@ -71,11 +71,11 @@
                     <input type="date" id="date" required>
                 </div>
                 <div class="form-group">
-                    <label>종목명 (타이핑 검색 가능)</label>
+                    <label>종목명 (클릭 후 타이핑 검색)</label>
                     <select id="stockName" class="search-select" required></select>
                 </div>
                 <div class="form-group">
-                    <label>토론자 (타이핑 검색 가능)</label>
+                    <label>토론자 (클릭 후 타이핑 검색)</label>
                     <select id="writerName" class="search-select" required></select>
                 </div>
             </div>
@@ -155,7 +155,17 @@
         localStorage.setItem('stockDB', JSON.stringify(db));
         renderOptions();
         renderTable();
-        $('.search-select').select2({ placeholder: "선택 또는 타이핑 검색..." });
+        
+        // ⭐ Select2 자동완성 한글 검색 최적화 설정
+        $('.search-select').select2({
+            placeholder: "선택 또는 타이핑 검색...",
+            allowClear: true,
+            language: {
+                noResults: function () {
+                    return "일치하는 항목이 없습니다.";
+                }
+            }
+        });
     }
 
     function renderOptions() {
@@ -166,8 +176,9 @@
         const sTags = document.getElementById('stockTags');
         const wTags = document.getElementById('writerTags');
 
-        sOpt.innerHTML = '<option value=""></option>'; 
-        wOpt.innerHTML = '<option value=""></option>';
+        // 첫 번째 옵션 비워두기 (Select2 placeholder 정상 노출용)
+        sOpt.innerHTML = '<option></option>'; 
+        wOpt.innerHTML = '<option></option>';
         fStock.innerHTML = '<option value="">전체 보기</option>';
         fWriter.innerHTML = '<option value="">전체 보기</option>';
         sTags.innerHTML = ''; wTags.innerHTML = '';
@@ -237,7 +248,6 @@
             const val = document.getElementById('newStock').value.trim();
             if(!val) return;
             
-            // 띄어쓰기를 모두 없앤 값으로 중복 비교 검사 수행
             const cleanVal = val.replace(/\s+/g, '');
             const isDuplicate = db.stocks.some(item => item.replace(/\s+/g, '') === cleanVal);
             
@@ -252,7 +262,6 @@
             const val = document.getElementById('newWriter').value.trim();
             if(!val) return;
             
-            // 띄어쓰기를 모두 없앤 값으로 중복 비교 검사 수행
             const cleanVal = val.replace(/\s+/g, '');
             const isDuplicate = db.writers.some(item => item.replace(/\s+/g, '') === cleanVal);
             
@@ -293,7 +302,7 @@
             document.getElementById('input-section').style.display = 'none';
             document.getElementById('search-section').style.display = 'block';
         }
-        renderTable(); // 탭 변경할 때 매번 목록을 최신화하여 리렌더링 처리
+        renderTable();
     }
 
     function exportToExcel() {
