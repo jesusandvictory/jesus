@@ -2,40 +2,41 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>주식 및 토론 기록 관리 시스템</title>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.5/xlsx.full.min.js"></script>
     <style>
-        body { font-family: 'Malgun Gothic', sans-serif; background-color: #f5f6f8; padding: 20px; }
+        body { font-family: 'Malgun Gothic', sans-serif; background-color: #f5f6f8; margin: 0; padding: 20px; }
         .container { max-width: 850px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .form-group { margin-bottom: 15px; }
-        .btn-submit { width: 100%; padding: 12px; background: #2ecc71; color: white; border: none; cursor: pointer; }
+        h1 { text-align: center; font-size: 24px; margin-bottom: 30px; color: #2c3e50; }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
+        .tab-btn { padding: 10px 20px; border: 1px solid #ddd; background: #f8f9fa; cursor: pointer; border-radius: 4px; font-weight: bold; }
+        .tab-btn.active { background: #007bff; color: white; border-color: #007bff; }
+        .form-row { display: flex; gap: 15px; }
+        .form-group { margin-bottom: 15px; flex: 1; }
+        input, textarea, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .btn-submit { width: 100%; padding: 12px; background: #2ecc71; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #f8f9fa; }
     </style>
 </head>
 <body>
 <div class="container">
     <h1>📈 주식 및 토론 기록 관리 시스템</h1>
+    <div class="tabs">
+        <button class="tab-btn active">📝 기록 입력</button>
+    </div>
     <form id="recordForm" onsubmit="saveRecord(event)">
-        <div class="form-group">
-            <label>날짜</label>
-            <input type="date" id="date" required>
+        <div class="form-row">
+            <div class="form-group"><label>날짜</label><input type="date" id="date" required></div>
+            <div class="form-group"><label>종목명</label><input type="text" id="stockName" required></div>
+            <div class="form-group"><label>토론자</label><input type="text" id="writerName" required></div>
         </div>
-        <div class="form-group">
-            <label>종목명</label>
-            <input type="text" id="stockName" required>
-        </div>
-        <div class="form-group">
-            <label>토론자</label>
-            <input type="text" id="writerName" required>
-        </div>
-        <div class="form-group">
-            <label>내용</label>
-            <textarea id="content" style="width:100%; height:100px;" required></textarea>
-        </div>
+        <div class="form-group"><label>토론 내용</label><textarea id="content" required></textarea></div>
         <button type="submit" id="submitBtn" class="btn-submit">저장하기</button>
     </form>
     <table>
@@ -45,9 +46,10 @@
 </div>
 
 <script>
-    // ⚠️ [중요] 아래 큰따옴표 안에 구글 웹앱 주소를 넣으세요!
+    // ⚠️ [중요] 여기에 구글 웹앱 URL 주소를 넣어주세요!
     let googleWebAppUrl = "여기에 주소를 넣으세요";
 
+    // 1. 데이터 불러오기 (구글 시트 연동)
     function fetchData() {
         if(googleWebAppUrl.includes("여기에")) return;
         fetch(googleWebAppUrl)
@@ -61,6 +63,7 @@
             });
     }
 
+    // 2. 데이터 저장하기 (구글 시트 연동)
     function saveRecord(e) {
         e.preventDefault();
         const data = {
@@ -70,6 +73,7 @@
             content: document.getElementById('content').value
         };
 
+        document.getElementById('submitBtn').innerText = "전송 중...";
         fetch(googleWebAppUrl, {
             method: "POST",
             mode: "no-cors",
@@ -77,13 +81,14 @@
             body: JSON.stringify(data)
         }).then(() => {
             alert('저장 완료!');
-            fetchData();
+            document.getElementById('submitBtn').innerText = "저장하기";
+            fetchData(); // 저장 후 즉시 목록 갱신
         });
     }
 
     $(document).ready(function() {
         document.getElementById('date').value = new Date().toISOString().substring(0, 10);
-        fetchData();
+        fetchData(); // 페이지 열자마자 데이터 불러오기
     });
 </script>
 </body>
