@@ -9,15 +9,16 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.5/xlsx.full.min.js"></script>
     <style>
-        body { font-family: 'Malgun Gothic', sans-serif; background-color: #f5f6f8; margin: 0; padding: 20px; }
+        body { font-family: 'Malgun Gothic', sans-serif; background-color: #f5f6f8; margin: 0; padding: 20px; color: #333; }
         .container { max-width: 850px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         h1 { text-align: center; font-size: 24px; margin-bottom: 30px; color: #2c3e50; }
         .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
         .tab-btn { padding: 10px 20px; border: 1px solid #ddd; background: #f8f9fa; cursor: pointer; border-radius: 4px; font-weight: bold; }
         .tab-btn.active { background: #007bff; color: white; border-color: #007bff; }
-        .form-row { display: flex; gap: 15px; }
-        .form-group { margin-bottom: 15px; flex: 1; }
-        input, textarea, select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .form-row { display: flex; gap: 15px; flex-wrap: wrap; }
+        .form-group { flex: 1; min-width: 180px; margin-bottom: 15px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; }
+        input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
         .btn-submit { width: 100%; padding: 12px; background: #2ecc71; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
@@ -46,10 +47,9 @@
 </div>
 
 <script>
-    // ⚠️ [중요] 여기에 구글 웹앱 URL 주소를 넣어주세요!
+    // ⚠️ [중요] 여기에 아까 발급받은 구글 웹앱 주소를 넣으세요!
     let googleWebAppUrl = "여기에 주소를 넣으세요";
 
-    // 1. 데이터 불러오기 (구글 시트 연동)
     function fetchData() {
         if(googleWebAppUrl.includes("여기에")) return;
         fetch(googleWebAppUrl)
@@ -63,7 +63,6 @@
             });
     }
 
-    // 2. 데이터 저장하기 (구글 시트 연동)
     function saveRecord(e) {
         e.preventDefault();
         const data = {
@@ -72,7 +71,6 @@
             writer: document.getElementById('writerName').value,
             content: document.getElementById('content').value
         };
-
         document.getElementById('submitBtn').innerText = "전송 중...";
         fetch(googleWebAppUrl, {
             method: "POST",
@@ -82,13 +80,13 @@
         }).then(() => {
             alert('저장 완료!');
             document.getElementById('submitBtn').innerText = "저장하기";
-            fetchData(); // 저장 후 즉시 목록 갱신
+            fetchData();
         });
     }
 
     $(document).ready(function() {
         document.getElementById('date').value = new Date().toISOString().substring(0, 10);
-        fetchData(); // 페이지 열자마자 데이터 불러오기
+        fetchData();
     });
 </script>
 </body>
