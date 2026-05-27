@@ -1,29 +1,69 @@
-// [스크립트 부분만 발췌 - 기존 코드의 <script>~</script> 전체를 이걸로 덮어쓰세요]
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>주식 및 토론 기록 관리 시스템</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.5/xlsx.full.min.js"></script>
+    <style>
+        body { font-family: 'Malgun Gothic', sans-serif; background-color: #f5f6f8; padding: 20px; }
+        .container { max-width: 850px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 15px; }
+        .btn-submit { width: 100%; padding: 12px; background: #2ecc71; color: white; border: none; cursor: pointer; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>📈 주식 및 토론 기록 관리 시스템</h1>
+    <form id="recordForm" onsubmit="saveRecord(event)">
+        <div class="form-group">
+            <label>날짜</label>
+            <input type="date" id="date" required>
+        </div>
+        <div class="form-group">
+            <label>종목명</label>
+            <input type="text" id="stockName" required>
+        </div>
+        <div class="form-group">
+            <label>토론자</label>
+            <input type="text" id="writerName" required>
+        </div>
+        <div class="form-group">
+            <label>내용</label>
+            <textarea id="content" style="width:100%; height:100px;" required></textarea>
+        </div>
+        <button type="submit" id="submitBtn" class="btn-submit">저장하기</button>
+    </form>
+    <table>
+        <thead><tr><th>날짜</th><th>종목명</th><th>닉네임</th><th>내용</th></tr></thead>
+        <tbody id="recordTableBody"></tbody>
+    </table>
+</div>
 
 <script>
-    let googleWebAppUrl = "https://script.google.com/macros/s/AKfycbzm8BP4YbBrbumbfoIgmPicHMwgKNkGAGYQVaYTbZSvX6Nboa0eliQ5J-rgT2tvoqE/exec";
-    let db = { stocks: ['j스타홀딩스', '삼성전자'], writers: ['주식왕'], records: [] };
+    // ⚠️ [중요] 아래 큰따옴표 안에 구글 웹앱 주소를 넣으세요!
+    let googleWebAppUrl = "여기에 주소를 넣으세요";
 
-    // 1. 웹사이트 열자마자 구글 시트에서 데이터 가져오기 (실시간 동기화)
     function fetchData() {
-        fetch(googleWebAppUrl) // 데이터를 불러오는 주소 (구글 시트 연동)
+        if(googleWebAppUrl.includes("여기에")) return;
+        fetch(googleWebAppUrl)
             .then(res => res.json())
             .then(data => {
-                db.records = data; // 구글 시트 데이터를 가져와서 화면에 세팅
-                renderTable();
+                const tbody = document.getElementById('recordTableBody');
+                tbody.innerHTML = '';
+                data.forEach(r => {
+                    tbody.innerHTML += `<tr><td>${r.date}</td><td>${r.stock}</td><td>${r.writer}</td><td>${r.content}</td></tr>`;
+                });
             });
     }
 
-    function init() {
-        fetchData(); // 데이터 불러오기 실행
-        renderOptions();
-        $('.search-select').select2({ placeholder: "선택 또는 타이핑 검색..." });
-    }
-
-    // 2. 저장할 때 구글 시트로 보내기
     function saveRecord(e) {
         e.preventDefault();
-        const newRecord = {
+        const data = {
             date: document.getElementById('date').value,
             stock: document.getElementById('stockName').value,
             writer: document.getElementById('writerName').value,
@@ -34,12 +74,17 @@
             method: "POST",
             mode: "no-cors",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(newRecord)
+            body: JSON.stringify(data)
         }).then(() => {
-            alert('저장 완료! 페이지를 새로고침하면 연동됩니다.');
-            fetchData(); // 저장 직후 다시 불러오기
+            alert('저장 완료!');
+            fetchData();
         });
     }
 
-    $(document).ready(function() { init(); });
+    $(document).ready(function() {
+        document.getElementById('date').value = new Date().toISOString().substring(0, 10);
+        fetchData();
+    });
 </script>
+</body>
+</html>
