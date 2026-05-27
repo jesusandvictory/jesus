@@ -35,7 +35,6 @@
         .tag { background: #e8f4fd; color: #1d9bf0; padding: 5px 10px; border-radius: 15px; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; }
         .tag .remove { cursor: pointer; color: #ff4d4d; font-weight: bold; }
         
-        /* 엑셀 및 인쇄 버튼 구역 */
         .action-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
         .btn-excel { background-color: #217346; color: white; border: none; padding: 10px 15px; border-radius: 4px; font-weight: bold; cursor: pointer; }
         .btn-print { background-color: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 4px; font-weight: bold; cursor: pointer; }
@@ -45,7 +44,6 @@
         th { background-color: #f8f9fa; }
         .btn-delete { background: #ff4d4d; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; }
 
-        /* 인쇄할 때 버튼이나 입력창 안 보이고 표만 깔끔하게 나오게 하는 설정 */
         @media print {
             body { background: white; padding: 0; }
             .container { box-shadow: none; padding: 0; max-width: 100%; }
@@ -237,11 +235,33 @@
     function addBaseItem(type) {
         if(type === 'stock') {
             const val = document.getElementById('newStock').value.trim();
-            if(val && !db.stocks.includes(val)) db.stocks.push(val);
+            if(!val) return;
+            
+            // 띄어쓰기를 모두 없앤 값으로 중복 비교 검사 수행
+            const cleanVal = val.replace(/\s+/g, '');
+            const isDuplicate = db.stocks.some(item => item.replace(/\s+/g, '') === cleanVal);
+            
+            if(isDuplicate) {
+                alert('이미 리스트에 존재하는 종목명입니다. (띄어쓰기 포함)');
+                document.getElementById('newStock').value = '';
+                return;
+            }
+            db.stocks.push(val);
             document.getElementById('newStock').value = '';
         } else {
             const val = document.getElementById('newWriter').value.trim();
-            if(val && !db.writers.includes(val)) db.writers.push(val);
+            if(!val) return;
+            
+            // 띄어쓰기를 모두 없앤 값으로 중복 비교 검사 수행
+            const cleanVal = val.replace(/\s+/g, '');
+            const isDuplicate = db.writers.some(item => item.replace(/\s+/g, '') === cleanVal);
+            
+            if(isDuplicate) {
+                alert('이미 리스트에 존재하는 닉네임입니다. (띄어쓰기 포함)');
+                document.getElementById('newWriter').value = '';
+                return;
+            }
+            db.writers.push(val);
             document.getElementById('newWriter').value = '';
         }
         init();
@@ -273,13 +293,12 @@
             document.getElementById('input-section').style.display = 'none';
             document.getElementById('search-section').style.display = 'block';
         }
+        renderTable(); // 탭 변경할 때 매번 목록을 최신화하여 리렌더링 처리
     }
 
-    // 엑셀 실제 파일 추출용 자바스크립트 함수
     function exportToExcel() {
         if(db.records.length === 0) { alert('다운로드할 데이터가 없습니다.'); return; }
         
-        // 데이터 정제 (관리 칸 제외)
         const exportData = db.records.map(r => ({
             '날짜': r.date,
             '종목명': r.stock,
@@ -291,7 +310,6 @@
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "주식기록목록");
         
-        // 파일 다운로드 실행
         XLSX.writeFile(workbook, "주식_토론_기록_목록.xlsx");
     }
 
