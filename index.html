@@ -30,10 +30,19 @@
         .btn-submit:hover { background: #27ae60; }
         
         .base-setup { display: flex; gap: 20px; margin-top: 30px; padding-top: 20px; border-top: 1px dashed #ddd; }
-        .setup-box { flex: 1; background: #fafafa; padding: 15px; border-radius: 6px; border: 1px solid #eee; }
+        .setup-box { flex: 1; background: #fafafa; padding: 15px; border-radius: 6px; border: 1px solid #eee; position: relative; }
         .tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
         .tag { background: #e8f4fd; color: #1d9bf0; padding: 5px 10px; border-radius: 15px; font-size: 12px; display: inline-flex; align-items: center; gap: 5px; }
         .tag .remove { cursor: pointer; color: #ff4d4d; font-weight: bold; }
+        
+        /* 🔍 실시간 찾기 추천 리스트 스타일 */
+        .search-results-box { 
+            position: absolute; width: calc(100% - 30px); background: white; 
+            border: 1px solid #ccc; border-top: none; border-radius: 0 0 4px 4px; 
+            max-height: 150px; overflow-y: auto; z-index: 10; display: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+        }
+        .search-item { padding: 8px 12px; cursor: pointer; font-size: 13px; }
+        .search-item:hover { background-color: #f1f3f5; color: #007bff; font-weight: bold; }
         
         .action-buttons { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
         .btn-excel { background-color: #217346; color: white; border: none; padding: 10px 15px; border-radius: 4px; font-weight: bold; cursor: pointer; }
@@ -88,19 +97,21 @@
 
         <div class="base-setup">
             <div class="setup-box">
-                <label>🏢 종목 기본 리스트 등록</label>
+                <label>🏢 종목 기본 리스트 등록 (타이핑 시 실시간 검색)</label>
                 <div style="display:flex; gap:5px;">
-                    <input type="text" id="newStock" placeholder="종목명" style="padding:8px;">
+                    <input type="text" id="newStock" placeholder="종목명 입력" style="padding:8px;" oninput="searchBaseItem('stock')" autocomplete="off">
                     <button type="button" onclick="addBaseItem('stock')" style="background:#007bff; color:white; border:none; padding:0 12px; border-radius:4px; cursor:pointer; font-weight:bold;">추가</button>
                 </div>
+                <div id="stockSearchList" class="search-results-box"></div>
                 <div class="tags" id="stockTags"></div>
             </div>
             <div class="setup-box">
-                <label>👤 토론자 기본 리스트 등록</label>
+                <label>👤 토론자 기본 리스트 등록 (타이핑 시 실시간 검색)</label>
                 <div style="display:flex; gap:5px;">
-                    <input type="text" id="newWriter" placeholder="닉네임" style="padding:8px;">
+                    <input type="text" id="newWriter" placeholder="닉네임 입력" style="padding:8px;" oninput="searchBaseItem('writer')" autocomplete="off">
                     <button type="button" onclick="addBaseItem('writer')" style="background:#007bff; color:white; border:none; padding:0 12px; border-radius:4px; cursor:pointer; font-weight:bold;">추가</button>
                 </div>
+                <div id="writerSearchList" class="search-results-box"></div>
                 <div class="tags" id="writerTags"></div>
             </div>
         </div>
@@ -156,7 +167,6 @@
         renderOptions();
         renderTable();
         
-        // ⭐ Select2 자동완성 한글 검색 최적화 설정
         $('.search-select').select2({
             placeholder: "선택 또는 타이핑 검색...",
             allowClear: true,
@@ -176,7 +186,6 @@
         const sTags = document.getElementById('stockTags');
         const wTags = document.getElementById('writerTags');
 
-        // 첫 번째 옵션 비워두기 (Select2 placeholder 정상 노출용)
         sOpt.innerHTML = '<option></option>'; 
         wOpt.innerHTML = '<option></option>';
         fStock.innerHTML = '<option value="">전체 보기</option>';
@@ -194,6 +203,41 @@
             fWriter.innerHTML += `<option value="${w}">${w}</option>`;
             wTags.innerHTML += `<span class="tag">${w}<span class="remove" onclick="removeBaseItem('writer','${w}')">×</span></span>`;
         });
+    }
+
+    // 🔍 기본 리스트 등록창 전용 실시간 검색 기능 (띄어쓰기 무시 매칭)
+    function searchBaseItem(type) {
+        const inputId = type === 'stock' ? 'newStock' : 'newWriter';
+        const listId = type === 'stock' ? 'stockSearchList' : 'writerSearchList';
+        const query = document.getElementById(inputId).value.trim().replace(/\s+/g, '');
+        const listContainer = document.getElementById(listId);
+        
+        if (!query) {
+            listContainer.style.display = 'none';
+            return;
+        }
+
+        const sourceArray = type === 'stock' ? db.stocks : db.writers;
+        // 입력한 글자가 포함된 기존 데이터를 실시간 필터링
+        const matchedItems = sourceArray.filter(item => item.replace(/\s+/g, '').includes(query));
+
+        if (matchedItems.length > 0) {
+            listContainer.innerHTML = matchedItems.map(item => 
+                `<div class="search-item" onclick="selectSearchItem('${type}', '${item}')">🔍 이미 등록됨: ${item}</div>`
+            ).join('');
+            listContainer.style.display = 'block';
+        } else {
+            listContainer.innerHTML = '<div class="search-item" style="color:#2ecc71; cursor:default;">✨ 새로 등록 가능한 이름입니다.</div>';
+            listContainer.style.display = 'block';
+        }
+    }
+
+    // 추천 리스트 클릭 시 입력창에 자동 완성 처리
+    function selectSearchItem(type, value) {
+        const inputId = type === 'stock' ? 'newStock' : 'newWriter';
+        const listId = type === 'stock' ? 'stockSearchList' : 'writerSearchList';
+        document.getElementById(inputId).value = value;
+        document.getElementById(listId).style.display = 'none';
     }
 
     function saveRecord(e) {
@@ -244,35 +288,26 @@
     }
 
     function addBaseItem(type) {
-        if(type === 'stock') {
-            const val = document.getElementById('newStock').value.trim();
-            if(!val) return;
-            
-            const cleanVal = val.replace(/\s+/g, '');
-            const isDuplicate = db.stocks.some(item => item.replace(/\s+/g, '') === cleanVal);
-            
-            if(isDuplicate) {
-                alert('이미 리스트에 존재하는 종목명입니다. (띄어쓰기 포함)');
-                document.getElementById('newStock').value = '';
-                return;
-            }
-            db.stocks.push(val);
-            document.getElementById('newStock').value = '';
-        } else {
-            const val = document.getElementById('newWriter').value.trim();
-            if(!val) return;
-            
-            const cleanVal = val.replace(/\s+/g, '');
-            const isDuplicate = db.writers.some(item => item.replace(/\s+/g, '') === cleanVal);
-            
-            if(isDuplicate) {
-                alert('이미 리스트에 존재하는 닉네임입니다. (띄어쓰기 포함)');
-                document.getElementById('newWriter').value = '';
-                return;
-            }
-            db.writers.push(val);
-            document.getElementById('newWriter').value = '';
+        const inputId = type === 'stock' ? 'newStock' : 'newWriter';
+        const listId = type === 'stock' ? 'stockSearchList' : 'writerSearchList';
+        const val = document.getElementById(inputId).value.trim();
+        
+        if(!val) return;
+        
+        const cleanVal = val.replace(/\s+/g, '');
+        const targetArray = type === 'stock' ? db.stocks : db.writers;
+        const isDuplicate = targetArray.some(item => item.replace(/\s+/g, '') === cleanVal);
+        
+        if(isDuplicate) {
+            alert(`이미 리스트에 존재하는 ${type === 'stock' ? '종목명' : '닉네임'}입니다. (띄어쓰기 포함 예외처리)`);
+            document.getElementById(inputId).value = '';
+            document.getElementById(listId).style.display = 'none';
+            return;
         }
+        
+        targetArray.push(val);
+        document.getElementById(inputId).value = '';
+        document.getElementById(listId).style.display = 'none';
         init();
     }
 
@@ -302,6 +337,9 @@
             document.getElementById('input-section').style.display = 'none';
             document.getElementById('search-section').style.display = 'block';
         }
+        // 검색 박스 닫기
+        document.getElementById('stockSearchList').style.display = 'none';
+        document.getElementById('writerSearchList').style.display = 'none';
         renderTable();
     }
 
@@ -321,6 +359,13 @@
         
         XLSX.writeFile(workbook, "주식_토론_기록_목록.xlsx");
     }
+
+    // 마우스로 바깥 클릭하면 자동완성 창이 닫히도록 설정
+    $(document).click(function(e) {
+        if(!$(e.target).closest('.setup-box').length) {
+            $('.search-results-box').hide();
+        }
+    });
 
     $(document).ready(function() {
         init();
